@@ -16,7 +16,7 @@ public class ClientRoot : SingelBase<ClientRoot>
     private void Start()
     {
         GameObject starpanel = new GameObject();
-        starpanel = Instantiate(Resources.Load<GameObject>("Prefabs/GameCanvas"));
+        starpanel = Instantiate(Resources.Load<GameObject>("Prefabs/GameStart"));
         starpanel.transform.SetParent(transform);
         starpanel.transform.localPosition = Vector3.zero;
         StartGamePanel = starpanel.GetComponent<StartGamePanel>();
@@ -37,7 +37,7 @@ public class ClientRoot : SingelBase<ClientRoot>
     {
         foreach (Transform child in transform)
         {
-            if (child.transform.name == "GameRoot")
+            if (child.transform.name == "Canvas")
             {
                 return child.transform;
             }

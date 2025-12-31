@@ -18,10 +18,12 @@ public class ChoosePanel : MonoBehaviour
     public void Service()
     {
         GameRoot.Instance.StartServer();
+        gameObject.SetActive(false);
     }
 
     public void Client()
     {
         GameRoot.Instance.StartClient();
+        gameObject.SetActive(false);
     }
 }
