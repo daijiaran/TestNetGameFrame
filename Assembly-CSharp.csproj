@@ -49,12 +49,12 @@
     <Compile Include="Assets\Scripts\GameRoot\GameRoot.cs" />
     <Compile Include="Assets\Scripts\Client\NetTalk.cs" />
     <Compile Include="Assets\Scripts\GameRoot\ServerRoot.cs" />
+    <Compile Include="Assets\Scripts\Conmon\SingelBase.cs" />
     <Compile Include="Assets\Scripts\Client\UI\ChoosePanel.cs" />
     <Compile Include="Assets\Scripts\Client\Player\PlayerControl.cs" />
     <Compile Include="Assets\Scripts\Server\Server.cs" />
     <Compile Include="Assets\Scripts\GameRoot\ClientRoot.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
-    <Compile Include="Assets\Scripts\Conmon\SingelTool.cs" />
     <Compile Include="Assets\Scripts\Client\UI\StartGamePanel.cs" />
     <Compile Include="Assets\Scripts\Client\NetworkManager.cs" />
     <Compile Include="Assets\Scripts\Server\ServiceUpdate.cs" />
