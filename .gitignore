@@ -1,0 +1,42 @@
+# 忽略编辑器配置
+.idea/
+*.iml
+*.iws
+
+# 忽略编译输出 (如果是Java项目)
+target/
+out/
+class/
+
+# 忽略系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略所有 Temp 文件夹
+Temp/
+**/Temp/
+
+# 针对你报错的具体路径进行忽略
+src/Client/Temp/
+
+
+
+
+# Unity 核心忽略规则
+/[Ll]ibrary/
+**/[Ll]ibrary/
+/[Tt]emp/
+**/[Tt]emp/
+/[Oo]bj/
+**/[Oo]bj/
+/[Bb]uild/
+**/[Bb]uild/
+/[Bb]uilds/
+**/[Bb]uilds/
+/[Ll]ogs/
+**/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+**/[Uu]ser[Ss]ettings/
+
+# 针对你项目的具体路径 (双重保险)
+src/Client/Library/

@@ -1,0 +1,6 @@
+<linker>
+    <assembly fullname="GameShared" preserve="all"/>
+    <assembly fullname="LiteNetLib" preserve="all"/>
+    <assembly fullname="System" preserve="all"/>
+    <assembly fullname="System.Core" preserve="all"/>
+</linker>
