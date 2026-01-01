@@ -16,7 +16,7 @@ public class ServerAllPlayerManager : MonoBehaviour
    
    private void Awake()
    {
-      Server.Instance.serviceUpdate.NewPlayerJoinEvent += CreatePlayerInstance;
+      
    }
 
    private void Update()
@@ -28,7 +28,7 @@ public class ServerAllPlayerManager : MonoBehaviour
    //创建玩家实体
    public void CreatePlayerInstance(string clientKey ,EndPoint remoteClient,  UserJoinPacket userJoinPacket)
    {
-      GameObject playerInstance = Resources.Load<GameObject>("Prefabs/Player_instance");
+      GameObject playerInstance = Instantiate(Resources.Load("Prefabs/Player_instance")) as GameObject;
       
       PlayerInstance newPlayerInstance = playerInstance.GetComponent<PlayerInstance>();
       newPlayerInstance.PlayerName = userJoinPacket.name;
@@ -84,7 +84,6 @@ public class ServerAllPlayerManager : MonoBehaviour
          userPositionPacket.X = playerInstance.transform.position.x;
          userPositionPacket.Y = playerInstance.transform.position.y;
          userPositionPacket.Z = playerInstance.transform.position.z;
-         userPositionPacket.Ip = playerInstanceKey.Key;
       }
    }
 }

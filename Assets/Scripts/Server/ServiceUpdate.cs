@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using Shared.DJRNetLib;
 using Shared.DJRNetLib.Packet;
+using UnityEngine;
 
 public class ServiceUpdate
 {
@@ -54,6 +55,7 @@ public class ServiceUpdate
             
             //持续向所有玩家广播服务器场景中的玩家的位置
             SendToAllPlayer();
+            
         }
         catch (SocketException sockEx)
         {
@@ -125,7 +127,8 @@ public class ServiceUpdate
     /// <param name="validBytes"></param>
     public void NewPlayerJoin(string clientKey ,EndPoint remoteClient,  UserJoinPacket validBytes)
     {
-        NewPlayerJoinEvent.Invoke(clientKey, remoteClient, validBytes);
+        Server.Instance.serverAllPlayerManager.CreatePlayerInstance(clientKey, remoteClient, validBytes);
+        Debug.Log(validBytes.name+"加入游戏了");
     }
     
     

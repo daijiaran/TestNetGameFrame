@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -5,7 +6,12 @@ public class Server : SingelBase<Server>
 {
     public ServiceUpdate serviceUpdate;
     public ServerAllPlayerManager serverAllPlayerManager;
-    
+
+    private void Awake()
+    {
+        Init();
+    }
+
     void Start()
     {
         Debug.Log("服务器开始运行！！！");        

@@ -55,6 +55,7 @@ public class NetworkManager : SingelBase<NetworkManager>
         if (netConect != null)
         {
             netConect.Update();
+            Debug.Log("接受数据中");
         }
     }
     
@@ -69,6 +70,7 @@ public class NetworkManager : SingelBase<NetworkManager>
     /// <param name="userPositionPacket"></param>
     public void synchronousOtherPlayer(String IpDetail , UserPositionPacket userPositionPacket)
     {
+        Debug.Log("用户："+userPositionPacket.Name+"<UNK>"+IpDetail);
         if (!players.ContainsKey(IpDetail))
         {   
             //如果没有这个玩家就创建一个新的玩家并且配置上位置信息

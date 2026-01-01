@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Shared.DJRNetLib;
 using Shared.DJRNetLib.Packet;
+using UnityEngine;
 
 
 public class NetConect
@@ -159,6 +160,7 @@ public class NetConect
         /// </summary>
         public void ReceiveInformation()
         {
+            Debug.Log("接受数据线程已经开启>>>>");
             Task.Run(() => 
             {
                 byte[] recvBuffer = new byte[1024];
