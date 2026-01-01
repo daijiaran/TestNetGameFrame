@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Shared.DJRNetLib
 {
-    public class UserJoinPacket
+    public class UserJoinPacket : PacketBase
     {
         public string name;
 
