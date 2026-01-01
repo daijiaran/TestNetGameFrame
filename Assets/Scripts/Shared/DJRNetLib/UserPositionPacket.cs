@@ -1,7 +1,7 @@
 using System.IO;
 using Shared.DJRNetLib; // 必须引入这个，用于内存流处理
 
-public class UserPacket
+public class UserPositionPacket
 {
     public string Name;
     public float R_X, R_Y, R_Z;
@@ -13,7 +13,10 @@ public class UserPacket
         using (MemoryStream ms = new MemoryStream())
         using (BinaryWriter writer = new BinaryWriter(ms))
         {
+            //写入消息头
             writer.Write((byte)PacketType.Position);
+            
+            //写入消息体
             writer.Write(Name); // 写入名字字符串
             writer.Write(R_X);
             writer.Write(R_Y);
@@ -26,25 +29,29 @@ public class UserPacket
         }
     }
 
-    //反序列化：把收到的 byte[] 变回对象
-    public UserPacket(byte[] data)
+    
+    
+    /// <summary>
+    /// 构造函数，专门用来接收 BinaryReader
+    /// 构造一个UserPosition对象
+    /// </summary>
+    /// <param name="reader"></param>
+    public UserPositionPacket(BinaryReader reader)
     {
-        using (MemoryStream ms = new MemoryStream(data))
-        using (BinaryReader reader = new BinaryReader(ms))
-        {
-            // 必须按写入的顺序读取！
-            Name = reader.ReadString();
-            
-            R_X = reader.ReadSingle();
-            R_Y = reader.ReadSingle();
-            R_Z = reader.ReadSingle();
-            
-            X = reader.ReadSingle(); // ReadSingle 就是读 float
-            Y = reader.ReadSingle();
-            Z = reader.ReadSingle();
-        }
+        // 直接从传进来的 reader 里接着往下读
+        // 注意：顺序必须和 ToBytes() 里的消息体的写入顺序完全一致！
+        Name = reader.ReadString();
+        
+        R_X = reader.ReadSingle();
+        R_Y = reader.ReadSingle();
+        R_Z = reader.ReadSingle();
+        
+        X = reader.ReadSingle();
+        Y = reader.ReadSingle();
+        Z = reader.ReadSingle();
     }
+    
 
     // 无参构造，用于初始化
-    public UserPacket() { }
+    public UserPositionPacket() { }
 }

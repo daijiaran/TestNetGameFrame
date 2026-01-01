@@ -17,7 +17,7 @@ public class ClientRoot : SingelBase<ClientRoot>
     {
         GameObject starpanel = new GameObject();
         starpanel = Instantiate(Resources.Load<GameObject>("Prefabs/GameStart"));
-        starpanel.transform.SetParent(transform);
+        starpanel.transform.SetParent(GetParent());
         starpanel.transform.localPosition = Vector3.zero;
         StartGamePanel = starpanel.GetComponent<StartGamePanel>();
         
@@ -28,7 +28,7 @@ public class ClientRoot : SingelBase<ClientRoot>
     {
         GameObject networkManager = Instantiate(Resources.Load<GameObject>("Prefabs/NetWrokManager"));
         NetworkManager = networkManager.GetComponent<NetworkManager>();
-        NetworkManager.transform.SetParent(transform);
+        NetworkManager.transform.SetParent(GetParent());
         NetworkManager.GameStart(PlayerName);
     }
 

@@ -4,14 +4,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Shared.DJRNetLib;
 
-namespace Shared.DJRNetLib
-{
-    
-    
-    
-    
-    public class NetConect
+
+public class NetConect
     {
         
         // 构造函数
@@ -34,7 +30,7 @@ namespace Shared.DJRNetLib
         
         
         //分别接受其他玩家的IP地址，和玩家的包
-        public Action<String,UserPacket> takePlayerPacket;
+        public Action<String,UserPositionPacket> takePlayerPacket;
         
         
         
@@ -71,6 +67,31 @@ namespace Shared.DJRNetLib
                 errCallback.Invoke(e.Message);
             }
         }
+        
+        
+        
+        
+        /// <summary>
+        /// 发送加入游戏的信息
+        /// </summary>
+        /// <param name="message"></param>
+        public void SendJoinMessage(UserJoinPacket joinPacket)
+        {
+            // 这里建议加 try-catch 防止没连网报错
+            try 
+            {
+                byte[] data = joinPacket.Tobyte();
+                socket.SendTo(data, ServerAddress);
+            }
+            catch (Exception e)
+            {
+                errCallback.Invoke(e.Message);
+            }
+        }
+        
+        
+        
+        
 
 
         
@@ -78,11 +99,11 @@ namespace Shared.DJRNetLib
         /// <summary>
         /// 发送位置信息
         /// </summary>
-        /// <param name="packet"></param>
-        public void SendPositionPacket(UserPacket packet)
+        /// <param name="positionPacket"></param>
+        public void SendPositionPacket(UserPositionPacket positionPacket)
         {
             // 【关键】调用 ToBytes() 变成数组，再发送
-            byte[] data = packet.ToBytes();
+            byte[] data = positionPacket.ToBytes();
             
             // 这里建议加 try-catch 防止没连网报错
             try 
@@ -120,14 +141,17 @@ namespace Shared.DJRNetLib
                         byte[] validBytes = new byte[length];
                         Array.Copy(recvBuffer, validBytes, length);
 
-                        // 反序列化
-                        UserPacket packet = new UserPacket(validBytes);
+                        
+                        
+                        
+                        // // 反序列化
+                        // UserPositionPacket positionPacket = new UserPositionPacket(validBytes);
 
-                        // 【新增】放入队列等待 Unity 主线程处理
-                        _packetQueue.Enqueue(new PacketInfo() { 
-                            Ip = remotePoint.ToString(), 
-                            Packet = packet 
-                        });
+                        // // 【新增】放入队列等待 Unity 主线程处理
+                        // _packetQueue.Enqueue(new PacketInfo() { 
+                        //     Ip = remotePoint.ToString(), 
+                        //     PositionPacket = positionPacket 
+                        // });
                     }
                     catch (Exception)
                     {
@@ -155,7 +179,7 @@ namespace Shared.DJRNetLib
             while (_packetQueue.TryDequeue(out PacketInfo info))
             {
                 // 触发事件，将 IP 和 包数据传给 NetworkManager
-                takePlayerPacket?.Invoke(info.Ip, info.Packet);
+                takePlayerPacket?.Invoke(info.Ip, info.PositionPacket);
             }
         }
 
@@ -165,4 +189,3 @@ namespace Shared.DJRNetLib
             socket.Close();
         }
     }
-}

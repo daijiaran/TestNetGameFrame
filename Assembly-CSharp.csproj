@@ -47,20 +47,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\GameRoot\GameRoot.cs" />
+    <Compile Include="Assets\Scripts\Client\NetConect.cs" />
     <Compile Include="Assets\Scripts\Client\NetTalk.cs" />
     <Compile Include="Assets\Scripts\GameRoot\ServerRoot.cs" />
+    <Compile Include="Assets\Scripts\Shared\DJRNetLib\UserJoinPacket.cs" />
     <Compile Include="Assets\Scripts\Conmon\SingelBase.cs" />
     <Compile Include="Assets\Scripts\Client\UI\ChoosePanel.cs" />
     <Compile Include="Assets\Scripts\Client\Player\PlayerControl.cs" />
     <Compile Include="Assets\Scripts\Server\Server.cs" />
+    <Compile Include="Assets\Scripts\Server\PlayerInstance.cs" />
     <Compile Include="Assets\Scripts\GameRoot\ClientRoot.cs" />
+    <Compile Include="Assets\Scripts\Server\ServerAllPlayerManager.cs" />
+    <Compile Include="Assets\Scripts\Shared\DJRNetLib\UserPositionPacket.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\Client\UI\StartGamePanel.cs" />
     <Compile Include="Assets\Scripts\Client\NetworkManager.cs" />
     <Compile Include="Assets\Scripts\Server\ServiceUpdate.cs" />
-    <Compile Include="Assets\Scripts\Shared\DJRNetLib\client\NetConect.cs" />
-    <Compile Include="Assets\Scripts\Shared\DJRNetLib\UserPacket.cs" />
     <Compile Include="Assets\Scripts\Shared\DJRNetLib\PacketInfo.cs" />
+    <Compile Include="Assets\Scripts\Shared\DJRNetLib\PacketType.cs" />
     <Compile Include="Assets\Scripts\Server\PlayersData.cs" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
