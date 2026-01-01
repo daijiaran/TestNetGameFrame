@@ -83,6 +83,7 @@ public class ServerAllPlayerManager : MonoBehaviour
          userPositionPacket.X = playerInstance.transform.position.x;
          userPositionPacket.Y = playerInstance.transform.position.y;
          userPositionPacket.Z = playerInstance.transform.position.z;
+         userPositionPacket.Ip = playerInstanceKey.Key;
       }
    }
 }

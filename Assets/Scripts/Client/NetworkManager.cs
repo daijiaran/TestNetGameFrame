@@ -35,6 +35,7 @@ public class NetworkManager : SingelBase<NetworkManager>
     public void GameStart(String name)
     {
         UserJoinPacket joinPacket = new UserJoinPacket(name);
+        joinPacket.Ip = netConect.GetLocalIpDetail();
         netConect.SendJoinMessage(joinPacket);
 
         PlayerSelf = CreatNewPlayer();

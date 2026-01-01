@@ -17,6 +17,8 @@ namespace Shared.DJRNetLib
                 
                 //写入消息体
                 writer.Write(name);
+                writer.Write(Ip);
+                
                 return ms.ToArray(); // 返回生成的字节数组
             }
         }
