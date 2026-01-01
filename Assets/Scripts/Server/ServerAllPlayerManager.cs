@@ -45,6 +45,7 @@ public class ServerAllPlayerManager : MonoBehaviour
       userPositionPacket.X = newPlayerInstance.transform.position.x;
       userPositionPacket.Y = newPlayerInstance.transform.position.y;
       userPositionPacket.Z = newPlayerInstance.transform.position.z;
+      userPositionPacket.Ip = clientKey;
       
       AllPlayerInstancesUserPositionPackets.Add(clientKey,userPositionPacket);
    }

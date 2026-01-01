@@ -42,18 +42,6 @@ public class NetworkManager : SingelBase<NetworkManager>
         PlayerSelf.name = name;
         PlayerSelf.isCurrentPlayer = true;
         
-        // 【修改】获取本地IPKey并绑定
-        string myKey = netConect.GetLocalIpDetail();
-        if (!string.IsNullOrEmpty(myKey))
-        {
-            // 防止重复添加
-            if (!players.ContainsKey(myKey))
-            {
-                players.Add(myKey, PlayerSelf);
-            }
-        }
-        
-        
         
         netConect.takePlayerPacket+=synchronousOtherPlayer;
     }
@@ -97,15 +85,32 @@ public class NetworkManager : SingelBase<NetworkManager>
         }
         else
         {
-            //如果此玩家存在则直接同步位置信息
-            players[IpDetail].PlayerName.text = userPositionPacket.Name;
-            // 同步旋转
-            // 将接收到的 X, Y, Z 欧拉角转换为 Quaternion 旋转
-            Vector3 currentRot = new Vector3(userPositionPacket.R_X, userPositionPacket.R_Y, userPositionPacket.R_Z);
-            players[IpDetail].transform.rotation = Quaternion.Euler(currentRot);
             
-            Vector3 vtr3 = new Vector3(userPositionPacket.X,userPositionPacket.Y,userPositionPacket.Z);
-            players[IpDetail].transform.position = vtr3;
+            bool isMyself = (userPositionPacket.Name == PlayerSelf.name) && (!players.ContainsValue(PlayerSelf));
+
+            if (isMyself)
+            {
+                players.Add(IpDetail, PlayerSelf);
+                Debug.Log($"成功绑定服务器 IP 身份: {IpDetail}");
+            }
+            else
+            {
+                // 真的是别人，创建新替身
+                PlayerControl newPlayer = CreatNewPlayer();
+                newPlayer.PlayerName.text = userPositionPacket.Name;
+                players.Add(IpDetail, newPlayer);
+                
+                //如果此玩家存在则直接同步位置信息
+                players[IpDetail].PlayerName.text = userPositionPacket.Name;
+                // 同步旋转
+                // 将接收到的 X, Y, Z 欧拉角转换为 Quaternion 旋转
+                Vector3 currentRot = new Vector3(userPositionPacket.R_X, userPositionPacket.R_Y, userPositionPacket.R_Z);
+                players[IpDetail].transform.rotation = Quaternion.Euler(currentRot);
+            
+                Vector3 vtr3 = new Vector3(userPositionPacket.X,userPositionPacket.Y,userPositionPacket.Z);
+                players[IpDetail].transform.position = vtr3;
+            }
+            
         }
     }
 
