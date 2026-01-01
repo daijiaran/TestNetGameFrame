@@ -1,4 +1,5 @@
-using System.IO; // 必须引入这个，用于内存流处理
+using System.IO;
+using Shared.DJRNetLib; // 必须引入这个，用于内存流处理
 
 public class UserPacket
 {
@@ -12,6 +13,7 @@ public class UserPacket
         using (MemoryStream ms = new MemoryStream())
         using (BinaryWriter writer = new BinaryWriter(ms))
         {
+            writer.Write((byte)PacketType.Position);
             writer.Write(Name); // 写入名字字符串
             writer.Write(R_X);
             writer.Write(R_Y);
