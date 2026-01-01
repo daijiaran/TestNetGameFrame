@@ -55,7 +55,6 @@ public class NetworkManager : SingelBase<NetworkManager>
         if (netConect != null)
         {
             netConect.Update();
-            Debug.Log("接受数据中");
         }
     }
     
@@ -66,69 +65,52 @@ public class NetworkManager : SingelBase<NetworkManager>
     /// <summary>
     /// 同步服务器上的数据
     /// </summary>
-    /// <param name="IpDetail"></param>
-    /// <param name="userPositionPacket"></param>
     public void synchronousOtherPlayer(String IpDetail , UserPositionPacket userPositionPacket)
     {
-        Debug.Log("用户："+userPositionPacket.Name+"<UNK>"+IpDetail);
+        // ------------------ 【修正逻辑开始】 ------------------
+        
+        // 1. 如果字典里没有这个玩家，说明是新玩家（或者还没把自己加进去）
         if (!players.ContainsKey(IpDetail))
         {   
-            //如果没有这个玩家就创建一个新的玩家并且配置上位置信息
-            players.Add(IpDetail,CreatNewPlayer());
-            players[IpDetail].PlayerName.text = userPositionPacket.Name;
-            
-            // 同步旋转
-            // 将接收到的 X, Y, Z 欧拉角转换为 Quaternion 旋转
-            Vector3 currentRot = new Vector3(userPositionPacket.R_X, userPositionPacket.R_Y, userPositionPacket.R_Z);
-            players[IpDetail].transform.rotation = Quaternion.Euler(currentRot);
-            
-            Vector3 vtr3 = new Vector3(userPositionPacket.X,userPositionPacket.Y,userPositionPacket.Z);
-            players[IpDetail].transform.position = vtr3;
-        }
-        else
-        {
-            
-            bool isMyself = (userPositionPacket.Name == PlayerSelf.name) && (!players.ContainsValue(PlayerSelf));
-
-            if (isMyself)
+            // 判断是否是自己
+            // 注意：这里用名字判断可能不够严谨，最好是能对比 IP，但本地测试时 IP 可能有差异
+            // 如果名字和自己一样，并且字典里还没存自己
+            if (userPositionPacket.Name == PlayerSelf.name) 
             {
+                // 把自己加入字典，与这个 IP 绑定
                 players.Add(IpDetail, PlayerSelf);
-                Debug.Log($"成功绑定服务器 IP 身份: {IpDetail}");
+                Debug.Log($"成功绑定本地玩家身份: {IpDetail}");
             }
             else
             {
-                // 真的是别人，创建新替身
+                // 是其他玩家，实例化一个新的
                 PlayerControl newPlayer = CreatNewPlayer();
                 newPlayer.PlayerName.text = userPositionPacket.Name;
                 players.Add(IpDetail, newPlayer);
-                
-                //如果此玩家存在则直接同步位置信息
-                players[IpDetail].PlayerName.text = userPositionPacket.Name;
-                // 同步旋转
-                // 将接收到的 X, Y, Z 欧拉角转换为 Quaternion 旋转
-                Vector3 currentRot = new Vector3(userPositionPacket.R_X, userPositionPacket.R_Y, userPositionPacket.R_Z);
-                players[IpDetail].transform.rotation = Quaternion.Euler(currentRot);
-            
-                Vector3 vtr3 = new Vector3(userPositionPacket.X,userPositionPacket.Y,userPositionPacket.Z);
-                players[IpDetail].transform.position = vtr3;
             }
-            
         }
+        
+        if (players.ContainsKey(IpDetail))
+        {
+            PlayerControl targetPlayer = players[IpDetail];
+            
+                Vector3 targetPos = new Vector3(userPositionPacket.X, userPositionPacket.Y, userPositionPacket.Z);
+                targetPlayer.transform.position = targetPos;
+                // 同步旋转
+                Vector3 targetRot = new Vector3(userPositionPacket.R_X, userPositionPacket.R_Y, userPositionPacket.R_Z);
+                targetPlayer.transform.rotation = Quaternion.Euler(targetRot);
+        }
+        
     }
-
-    
     
     
 
-    /// <summary>
-    /// 在场景里面玩家
-    /// </summary>
-    /// <returns></returns>
     public PlayerControl CreatNewPlayer()
     {
         GameObject player = Instantiate(PlayerPrefab);
-        player.GetComponent<Rigidbody>().isKinematic= true;
-        player.GetComponent<Collider>().enabled = false;
+        // 如果是网络玩家，一般需要禁用物理模拟，完全由位置包驱动
+        player.GetComponent<Rigidbody>().isKinematic= true; 
+        player.GetComponent<Collider>().enabled = false; // 视需求而定，可能需要保留 Collider 做检测
         Debug.Log("新的玩家加入");
         return player.GetComponent<PlayerControl>();
     }

@@ -28,52 +28,57 @@ public class ServiceUpdate
 
     }
     
+    // 添加一个计时变量
+    private float lastSendTime = 0f;
+    private const float SendRate = 0.015f; // 约每秒 60 次
+    
     public void Update()
-{ 
-    // 1. 检查是否有待处理的数据
-    // 如果没有数据 (Available == 0)，直接 return，把控制权交还给 Unity，防止卡死
-    if (socket.Available <= 0) return;
-
-    // 2. 使用 while 循环
-    // 因为一帧的时间内（比如 0.016秒），可能收到了 10 个包。
-    // 如果用 if，一帧只处理 1 个，会导致严重的网络延迟积压。
-    while (socket.Available > 0)
-    {
-        EndPoint remoteClient = new IPEndPoint(IPAddress.Any, 0);
-        try 
-        {
-            // 因为前面检查了 Available > 0，这里的 ReceiveFrom 几乎会瞬间完成，不会卡死
-            int receivedLength = socket.ReceiveFrom(buffer, ref remoteClient);
-            string clientKey = remoteClient.ToString();
+    { 
+            // 1. 检查是否有待处理的数据
+            // 如果没有数据 (Available == 0)，直接 return，把控制权交还给 Unity，防止卡死
+            if (socket.Available <= 0) return;
+            // 2. 使用 while 循环
+            // 因为一帧的时间内（比如 0.016秒），可能收到了 10 个包。
+            // 如果用 if，一帧只处理 1 个，会导致严重的网络延迟积压。
+            while (socket.Available > 0)
+            {
+                
+                
+                EndPoint remoteClient = new IPEndPoint(IPAddress.Any, 0);
+                try 
+                {
+                    // 因为前面检查了 Available > 0，这里的 ReceiveFrom 几乎会瞬间完成，不会卡死
+                    int receivedLength = socket.ReceiveFrom(buffer, ref remoteClient);
+                    string clientKey = remoteClient.ToString();
+                    
+                    //获取有效比特流
+                    byte[] validBytes = new byte[receivedLength];
+                    Array.Copy(buffer, validBytes, receivedLength);
+                    
+                    //解析包
+                    ParsePacket(clientKey, remoteClient ,validBytes);
+                }
+                catch (SocketException sockEx)
+                {
+                    if (sockEx.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+                        UnityEngine.Debug.Log("某个客户端强迫关闭了连接 (10054)，已忽略。");
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.Log($"Socket 错误: {sockEx.Message}");
+                    }
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.Log($"发生错误: {e.Message}");
+                }
+                
+                
+            }
             
-            //获取有效比特流
-            byte[] validBytes = new byte[receivedLength];
-            Array.Copy(buffer, validBytes, receivedLength);
-            
-            //解析包
-            ParsePacket(clientKey, remoteClient ,validBytes);
-            
-            //持续向所有玩家广播服务器场景中的玩家的位置
             SendToAllPlayer();
-            
-        }
-        catch (SocketException sockEx)
-        {
-            if (sockEx.SocketErrorCode == SocketError.ConnectionReset)
-            {
-                UnityEngine.Debug.Log("某个客户端强迫关闭了连接 (10054)，已忽略。");
-            }
-            else
-            {
-                UnityEngine.Debug.Log($"Socket 错误: {sockEx.Message}");
-            }
-        }
-        catch (Exception e)
-        {
-            UnityEngine.Debug.Log($"发生错误: {e.Message}");
-        }
     }
-}
 
 
 
@@ -122,13 +127,19 @@ public class ServiceUpdate
     /// <summary>
     /// 新玩家注册
     /// </summary>
-    /// <param name="clientKey"></param>
-    /// <param name="remoteClient"></param>
-    /// <param name="validBytes"></param>
     public void NewPlayerJoin(string clientKey ,EndPoint remoteClient,  UserJoinPacket validBytes)
     {
-        Server.Instance.serverAllPlayerManager.CreatePlayerInstance(clientKey, remoteClient, validBytes);
-        Debug.Log(validBytes.name+"加入游戏了");
+        // 【新增】收到 Join 包时，立刻保存客户端的 IP 地址
+        if (!playersData.ClientEndPoints.ContainsKey(clientKey))
+        {
+            playersData.ClientEndPoints.Add(clientKey, remoteClient);
+        }
+        else
+        {
+            playersData.ClientEndPoints[clientKey] = remoteClient;
+        }
+
+        NewPlayerJoinEvent.Invoke(clientKey, remoteClient, validBytes);
     }
     
     
@@ -197,17 +208,27 @@ public class ServiceUpdate
     
     
     /// <summary>
-    /// 实时广播：把服务器上运行的玩家的数据其他所有客户端
+    /// 实时广播：把服务器上运行的所有玩家数据，发给所有客户端
     /// </summary>
     public void SendToAllPlayer()
     {
-        
-        foreach (var kvp in playersData.ClientEndPoints)
+        // 1. 遍历每一个需要接收数据的客户端 (接收者)
+        foreach (var clientKvp in playersData.ClientEndPoints)
         {
-            string targetKey = kvp.Key;
-            EndPoint targetEndPoint = kvp.Value;
-            
-            socket.SendTo(playersData.Players[targetKey].ToBytes(), targetEndPoint);
+            EndPoint receiverEndPoint = clientKvp.Value;
+
+            // 2. 遍历所有玩家的数据 (要发送的内容)
+            foreach (var playerKvp in playersData.Players)
+            {
+                UserPositionPacket dataToSend = playerKvp.Value;
+                
+                // 【可选优化】如果不想让玩家收到自己的数据（节省流量），可以加个判断
+                // if (playerKvp.Key == clientKvp.Key) continue; 
+                
+                // 发送！
+                // 这样接收者(Receiver) 就会收到 玩家A、玩家B、玩家C... 的一个个包
+                socket.SendTo(dataToSend.ToBytes(), receiverEndPoint);
+            }
         }
     }
 }

@@ -160,7 +160,6 @@ public class NetConect
         /// </summary>
         public void ReceiveInformation()
         {
-            Debug.Log("接受数据线程已经开启>>>>");
             Task.Run(() => 
             {
                 byte[] recvBuffer = new byte[1024];
@@ -169,25 +168,32 @@ public class NetConect
                     try
                     {
                         EndPoint remotePoint = new IPEndPoint(IPAddress.Any, 0);
-                        
-                        // 【修改】实现接收逻辑
+                
+                        // 接收数据
                         int length = socket.ReceiveFrom(recvBuffer, ref remotePoint);
-                        
+                
                         // 截取有效数据
                         byte[] validBytes = new byte[length];
                         Array.Copy(recvBuffer, validBytes, length);
 
                         ParsePacket(validBytes);
-                        
                     }
-                    catch (Exception)
+                    catch (SocketException sockEx)
                     {
-                        break;
+                        // 某些 socket 错误可能不需要退出，比如超时
+                        // 但如果是 socket 被关闭了，才需要 break
+                        UnityEngine.Debug.Log($"Socket 异常: {sockEx.Message}");
+                        // 不要 break，除非你确定连接断开了
+                    }
+                    catch (Exception e)
+                    {
+                        // 【重要修复】绝对不要在这里 break！
+                        // 打印错误日志，然后允许循环继续，接收下一个包
+                        UnityEngine.Debug.LogError($"接收线程发生错误，已忽略: {e.Message}\n{e.StackTrace}");
                     }
                 }
             });
         }
-
         
         
         /// <summary>
