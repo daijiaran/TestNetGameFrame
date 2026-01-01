@@ -12,13 +12,6 @@ public class ServerAllPlayerManager : MonoBehaviour
    public Dictionary<string, UserPositionPacket> AllPlayerInstancesUserPositionPackets = new Dictionary<string, UserPositionPacket>();
    
    
-   
-   
-   private void Awake()
-   {
-      
-   }
-
    private void Update()
    {
       UpdatePlayerData();
@@ -26,7 +19,7 @@ public class ServerAllPlayerManager : MonoBehaviour
    
    
    //创建玩家实体
-   public void CreatePlayerInstance(string clientKey ,EndPoint remoteClient,  UserJoinPacket userJoinPacket)
+   public void CreatePlayerInstance(string clientKey ,  UserJoinPacket userJoinPacket)
    {
       GameObject playerInstance = Instantiate(Resources.Load("Prefabs/Player_instance")) as GameObject;
       

@@ -67,7 +67,6 @@ public class NetworkManager : SingelBase<NetworkManager>
     /// </summary>
     public void synchronousOtherPlayer(String IpDetail , UserPositionPacket userPositionPacket)
     {
-        // ------------------ 【修正逻辑开始】 ------------------
         
         // 1. 如果字典里没有这个玩家，说明是新玩家（或者还没把自己加进去）
         if (!players.ContainsKey(IpDetail))
@@ -92,11 +91,13 @@ public class NetworkManager : SingelBase<NetworkManager>
         
         if (players.ContainsKey(IpDetail))
         {
-            PlayerControl targetPlayer = players[IpDetail];
-            
+                
+                PlayerControl targetPlayer = players[IpDetail];
+                
+                targetPlayer.PlayerName.text = userPositionPacket.Name;
+                
                 Vector3 targetPos = new Vector3(userPositionPacket.X, userPositionPacket.Y, userPositionPacket.Z);
                 targetPlayer.transform.position = targetPos;
-                // 同步旋转
                 Vector3 targetRot = new Vector3(userPositionPacket.R_X, userPositionPacket.R_Y, userPositionPacket.R_Z);
                 targetPlayer.transform.rotation = Quaternion.Euler(targetRot);
         }
@@ -110,7 +111,7 @@ public class NetworkManager : SingelBase<NetworkManager>
         GameObject player = Instantiate(PlayerPrefab);
         // 如果是网络玩家，一般需要禁用物理模拟，完全由位置包驱动
         player.GetComponent<Rigidbody>().isKinematic= true; 
-        player.GetComponent<Collider>().enabled = false; // 视需求而定，可能需要保留 Collider 做检测
+        player.GetComponent<Collider>().enabled = true; 
         Debug.Log("新的玩家加入");
         return player.GetComponent<PlayerControl>();
     }

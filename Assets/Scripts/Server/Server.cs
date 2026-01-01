@@ -1,6 +1,9 @@
 using System;
 using Unity.VisualScripting;
 using UnityEngine;
+using Shared.DJRNetLib.Packet; // 引用包定义
+using System.Net;
+using Shared.DJRNetLib;
 
 public class Server : SingelBase<Server>
 {
@@ -16,21 +19,50 @@ public class Server : SingelBase<Server>
     {
         Debug.Log("服务器开始运行！！！");        
         
-        // 【修正 1】必须先初始化网络服务
-        // 这样当后面 Instantiate 触发 Awake 时，serviceUpdate 已经存在了
         serviceUpdate = new ServiceUpdate();
         transform.AddComponent<ServerAllPlayerManager>();
         serverAllPlayerManager = transform.GetComponent<ServerAllPlayerManager>();
+
+        //订阅玩家加入事件
+        if (serviceUpdate != null)
+        {
+            serviceUpdate.NewPlayerJoinEvent += OnPlayerJoin;
+        }
     }
 
+    
+    
+    private void OnPlayerJoin(string clientKey, EndPoint remoteEndPoint, UserJoinPacket joinPacket)
+    {
+        Debug.Log($"接收到玩家加入请求: {clientKey}");
+        serverAllPlayerManager.CreatePlayerInstance(clientKey,joinPacket); 
+    }
+
+    
+    
+    
+    
     void Update()
     {
-        //同步当前服务器上的数据
-        // 注意：确保 serverAllPlayerManager 和 serviceUpdate 都不为空
         if (serverAllPlayerManager != null && serviceUpdate != null)
         {
+            // 将逻辑层的数据同步给网络层用于广播
             serviceUpdate.playersData.Players = serverAllPlayerManager.AllPlayerInstancesUserPositionPackets;
             serviceUpdate.Update();
+            serviceUpdate.SendToAllPlayer();
+        }
+    }
+    
+    
+    
+    
+    
+    // 在销毁时取消订阅防止内存泄漏
+    private void OnDestroy()
+    {
+        if (serviceUpdate != null)
+        {
+            serviceUpdate.NewPlayerJoinEvent -= OnPlayerJoin;
         }
     }
 }

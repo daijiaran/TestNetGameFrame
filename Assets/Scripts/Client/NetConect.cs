@@ -225,8 +225,12 @@ public class NetConect
         
         }
         
+        
+        
+        
+        
         /// <summary>
-        /// 处理玩家的位置信息更新
+        /// 处理场景中对象的位置信息更新
         /// </summary>
         /// <param name="remotePoint"></param>
         /// <param name="validBytes"></param>

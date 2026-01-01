@@ -28,10 +28,9 @@ public class ServiceUpdate
 
     }
     
-    // 添加一个计时变量
-    private float lastSendTime = 0f;
-    private const float SendRate = 0.015f; // 约每秒 60 次
-    
+    /// <summary>
+    /// 监听指定端口，接收客户端消息
+    /// </summary>
     public void Update()
     { 
             // 1. 检查是否有待处理的数据
@@ -42,8 +41,6 @@ public class ServiceUpdate
             // 如果用 if，一帧只处理 1 个，会导致严重的网络延迟积压。
             while (socket.Available > 0)
             {
-                
-                
                 EndPoint remoteClient = new IPEndPoint(IPAddress.Any, 0);
                 try 
                 {
@@ -73,11 +70,7 @@ public class ServiceUpdate
                 {
                     UnityEngine.Debug.Log($"发生错误: {e.Message}");
                 }
-                
-                
             }
-            
-            SendToAllPlayer();
     }
 
 
@@ -105,13 +98,8 @@ public class ServiceUpdate
                     UserJoinPacket userJoinPacket = new UserJoinPacket(reader);
                     NewPlayerJoin(clientKey, remoteClient, userJoinPacket);
                     break;
-                case PacketType.Position:
-                    UserPositionPacket userPositionPacket = new UserPositionPacket(reader);
-                    UserPositionPacketProcess(clientKey, remoteClient, userPositionPacket);
-                    break;
                 case PacketType.Move:
                     UserMovePacket movePacket = new UserMovePacket(reader);
-                    // 调用处理移动的方法
                     OnUserMove(clientKey, movePacket);
                     break;
                 default:
@@ -124,12 +112,16 @@ public class ServiceUpdate
     }
 
 
+  
     /// <summary>
-    /// 新玩家注册
+    /// 新玩家注册加入
     /// </summary>
+    /// <param name="clientKey"></param>
+    /// <param name="remoteClient"></param>
+    /// <param name="validBytes"></param>
     public void NewPlayerJoin(string clientKey ,EndPoint remoteClient,  UserJoinPacket validBytes)
     {
-        // 【新增】收到 Join 包时，立刻保存客户端的 IP 地址
+        // 收到 Join 包时，立刻保存客户端的 IP 地址
         if (!playersData.ClientEndPoints.ContainsKey(clientKey))
         {
             playersData.ClientEndPoints.Add(clientKey, remoteClient);
@@ -139,12 +131,18 @@ public class ServiceUpdate
             playersData.ClientEndPoints[clientKey] = remoteClient;
         }
 
-        NewPlayerJoinEvent.Invoke(clientKey, remoteClient, validBytes);
+        // 【修复 2】使用 ?. Invoke 防止空引用异常
+        // 如果没人订阅这个事件，代码也不会报错崩溃
+        NewPlayerJoinEvent?.Invoke(clientKey, remoteClient, validBytes);
     }
     
     
     
-    // 添加处理移动的方法
+   /// <summary>
+   /// 处理客户端大宋过来的移动控制数据包
+   /// </summary>
+   /// <param name="clientKey"></param>
+   /// <param name="movePacket"></param>
     public void OnUserMove(string clientKey, UserMovePacket movePacket)
     {
         // 调用 ServerAllPlayerManager 去驱动具体的 PlayerInstance
@@ -153,7 +151,7 @@ public class ServiceUpdate
     
     
     /// <summary>
-    /// 处理玩家的位置信息更新
+    /// 处理玩家的位置信息更新，但是目前是服务器模式并不接收玩家位置信息只
     /// </summary>
     /// <param name="clientKey"></param>
     /// <param name="remoteClient"></param>
@@ -170,8 +168,6 @@ public class ServiceUpdate
     
     
     
-
-
     /// <summary>
     /// 更新玩家数据，添加对局玩家
     /// </summary>
@@ -205,8 +201,6 @@ public class ServiceUpdate
     
     
     
-    
-    
     /// <summary>
     /// 实时广播：把服务器上运行的所有玩家数据，发给所有客户端
     /// </summary>
@@ -221,9 +215,6 @@ public class ServiceUpdate
             foreach (var playerKvp in playersData.Players)
             {
                 UserPositionPacket dataToSend = playerKvp.Value;
-                
-                // 【可选优化】如果不想让玩家收到自己的数据（节省流量），可以加个判断
-                // if (playerKvp.Key == clientKvp.Key) continue; 
                 
                 // 发送！
                 // 这样接收者(Receiver) 就会收到 玩家A、玩家B、玩家C... 的一个个包
