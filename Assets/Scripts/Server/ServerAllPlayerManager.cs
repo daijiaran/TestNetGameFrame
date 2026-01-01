@@ -10,7 +10,6 @@ public class ServerAllPlayerManager : MonoBehaviour
    //IP地址对应服务器中模拟的玩家当前玩家实例
    public Dictionary<string, PlayerInstance> AllPlayerInstance = new Dictionary<string, PlayerInstance>();
    public Dictionary<string, UserPositionPacket> AllPlayerInstancesUserPositionPackets = new Dictionary<string, UserPositionPacket>();
-   public String PlayerPrefabPath;
    
    
    
@@ -29,7 +28,8 @@ public class ServerAllPlayerManager : MonoBehaviour
    //创建玩家实体
    public void CreatePlayerInstance(string clientKey ,EndPoint remoteClient,  UserJoinPacket userJoinPacket)
    {
-      GameObject playerInstance = Resources.Load<GameObject>(PlayerPrefabPath);
+      GameObject playerInstance = Resources.Load<GameObject>("Prefabs/Player_instance");
+      
       PlayerInstance newPlayerInstance = playerInstance.GetComponent<PlayerInstance>();
       newPlayerInstance.PlayerName = userJoinPacket.name;
       AllPlayerInstance.Add(clientKey,newPlayerInstance);
