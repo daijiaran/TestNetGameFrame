@@ -1,3 +1,5 @@
+using Shared.DJRNetLib;
+using Shared.DJRNetLib.Packet;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem; // 【必须】引用新版命名空间
@@ -26,14 +28,9 @@ public class PlayerControl : MonoBehaviour
     
     private void Move()
     {
-        // ==========================================
-        // 【修改】使用新版 Input System 直接读取键盘
-        // ==========================================
-        
         float h = 0;
         float v = 0;
 
-        // 检查键盘是否存在 (防止没有键盘时报错)
         if (Keyboard.current != null)
         {
             if (Keyboard.current.aKey.isPressed) h -= 1;
@@ -42,14 +39,17 @@ public class PlayerControl : MonoBehaviour
             if (Keyboard.current.wKey.isPressed) v += 1;
         }
 
-        // 下面的移动逻辑保持不变
-        Vector3 moveDir = new Vector3(h, 0, v);
-
-        if (moveDir.magnitude > 0.1f)
+        // 只有当有输入时才发送，或者每一帧都发送（取决于设计，建议有输入才发以节省带宽）
+        // 这里为了演示，只要有输入就发
+        if (h != 0 || v != 0)
         {
-            moveDir = moveDir.normalized;
+            // 构造包
+            UserMovePacket movePacket = new UserMovePacket(h, v);
+            // 发送包 (需要通过 NetworkManager 调用 NetConect)
+            // 假设你已经在 NetworkManager 里面写了一个 SendMove 的封装，或者直接访问
+            NetworkManager.Instance.SendMoveToSever(movePacket); 
         }
-
-        rigidbody.linearVelocity = new Vector3(moveDir.x * moveSpeed, rigidbody.linearVelocity.y, moveDir.z * moveSpeed);
+    
+        // 客户端本地也可以保留移动逻辑用于平滑表现（预测），但最终位置以服务器同步回来的 UserPositionPacket 为准
     }
 }

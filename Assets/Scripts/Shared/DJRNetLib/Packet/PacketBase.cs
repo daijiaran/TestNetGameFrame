@@ -1,4 +1,4 @@
-namespace Shared.DJRNetLib
+namespace Shared.DJRNetLib.Packet
 {
     public class PacketBase
     {

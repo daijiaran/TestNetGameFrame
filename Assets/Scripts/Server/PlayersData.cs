@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Net;
+using Shared.DJRNetLib.Packet;
+
 public class PlayersData
 {
     // 字典：IP地址字符串 -> 玩家数据包

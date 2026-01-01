@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Shared.DJRNetLib;
 using  Shared;
+using Shared.DJRNetLib.Packet;
 
 public class NetworkManager : SingelBase<NetworkManager>
 {
@@ -40,9 +41,16 @@ public class NetworkManager : SingelBase<NetworkManager>
         PlayerSelf.name = name;
         PlayerSelf.isCurrentPlayer = true;
         
-        //将自己的IP地址与实例加入字典，这样
-        // players.Add(netConect.);
-        
+        // 【修改】获取本地IPKey并绑定
+        string myKey = netConect.GetLocalIpDetail();
+        if (!string.IsNullOrEmpty(myKey))
+        {
+            // 防止重复添加
+            if (!players.ContainsKey(myKey))
+            {
+                players.Add(myKey, PlayerSelf);
+            }
+        }
         
         
         
@@ -117,7 +125,11 @@ public class NetworkManager : SingelBase<NetworkManager>
         return player.GetComponent<PlayerControl>();
     }
     
-    
+    //向客户端发送移动指令信息
+    public void SendMoveToSever(UserMovePacket packet)
+    {
+        netConect.SendMovePacket(packet);
+    }
     
     
     

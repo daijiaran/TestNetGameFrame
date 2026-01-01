@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using Shared.DJRNetLib;
+using Shared.DJRNetLib.Packet;
 
 public class ServiceUpdate
 {
@@ -102,6 +103,9 @@ public class ServiceUpdate
                     UserPositionPacketProcess(clientKey, remoteClient, userPositionPacket);
                     break;
                 case PacketType.Move:
+                    UserMovePacket movePacket = new UserMovePacket(reader);
+                    // 调用处理移动的方法
+                    OnUserMove(clientKey, movePacket);
                     break;
                 default:
                     break;
@@ -126,6 +130,12 @@ public class ServiceUpdate
     
     
     
+    // 添加处理移动的方法
+    public void OnUserMove(string clientKey, UserMovePacket movePacket)
+    {
+        // 调用 ServerAllPlayerManager 去驱动具体的 PlayerInstance
+        Server.Instance.serverAllPlayerManager.HandlePlayerMove(clientKey, movePacket);
+    }
     
     
     /// <summary>

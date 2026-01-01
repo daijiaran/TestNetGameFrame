@@ -1,3 +1,5 @@
+using Shared.DJRNetLib.Packet;
+
 namespace Shared.DJRNetLib
 {
     public class PacketInfo

@@ -1,4 +1,5 @@
 using System.IO;
+using Shared.DJRNetLib.Packet;
 
 namespace Shared.DJRNetLib
 {

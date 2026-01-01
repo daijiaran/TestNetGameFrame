@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace Shared.DJRNetLib
+namespace Shared.DJRNetLib.Packet
 {
     public class UserMovePacket : PacketBase
     {

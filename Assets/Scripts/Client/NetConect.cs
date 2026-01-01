@@ -1,25 +1,18 @@
 using System;
-using System.Collections.Concurrent; // 【1】必须引入这个命名空间
+using System.Collections.Concurrent;
+using System.IO; // 【1】必须引入这个命名空间
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Shared.DJRNetLib;
+using Shared.DJRNetLib.Packet;
 
 
 public class NetConect
     {
         
-        // 构造函数
-        public NetConect()
-        {
-            // 【新增】这一行非常关键！
-            // 绑定到本机任意可用端口（IPAddress.Any, 0）
-            // 只有绑定了，Socket 才知道要“打开耳朵”听数据
-            socket.Bind(new IPEndPoint(IPAddress.Any, 0));
-        }
-        
-        
+
         
         
         // 接受到信息的时候通知 UI 更新
@@ -28,13 +21,8 @@ public class NetConect
         public Action<String> errCallback;
         
         
-        
         //分别接受其他玩家的IP地址，和玩家的包
         public Action<String,UserPositionPacket> takePlayerPacket;
-        
-        
-        
-        
         
         //实现网络信息发送的管子
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -47,6 +35,37 @@ public class NetConect
 
         // 【新增】专门存放玩家数据包的队列
         private ConcurrentQueue<PacketInfo> _packetQueue = new ConcurrentQueue<PacketInfo>();
+        
+        
+        
+        
+        
+        // 构造函数
+        public NetConect()
+        {
+            // 【新增】这一行非常关键！
+            // 绑定到本机任意可用端口（IPAddress.Any, 0）
+            // 只有绑定了，Socket 才知道要“打开耳朵”听数据
+            socket.Bind(new IPEndPoint(IPAddress.Any, 0));
+        }
+        
+        // 在 NetConect 类中添加
+        public string GetLocalIpDetail()
+        {
+            if (socket != null && socket.LocalEndPoint != null)
+            {
+                return socket.LocalEndPoint.ToString();
+            }
+            return "";
+        }
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -91,7 +110,22 @@ public class NetConect
         
         
         
-        
+        /// <summary>
+        /// 发送当前客户端的移动指令包
+        /// </summary>
+        /// <param name="movePacket"></param>
+        public void SendMovePacket(UserMovePacket movePacket)
+        {
+            try 
+            {
+                byte[] data = movePacket.ToBytes();
+                socket.SendTo(data, ServerAddress);
+            }
+            catch (Exception e)
+            {
+                errCallback.Invoke(e.Message);
+            }
+        }
 
 
         
@@ -141,17 +175,8 @@ public class NetConect
                         byte[] validBytes = new byte[length];
                         Array.Copy(recvBuffer, validBytes, length);
 
+                        ParsePacket(validBytes);
                         
-                        
-                        
-                        // // 反序列化
-                        // UserPositionPacket positionPacket = new UserPositionPacket(validBytes);
-
-                        // // 【新增】放入队列等待 Unity 主线程处理
-                        // _packetQueue.Enqueue(new PacketInfo() { 
-                        //     Ip = remotePoint.ToString(), 
-                        //     PositionPacket = positionPacket 
-                        // });
                     }
                     catch (Exception)
                     {
@@ -163,6 +188,48 @@ public class NetConect
 
         
         
+        /// <summary>
+        /// 解析包并且分发给对应的方法工作
+        /// </summary>
+        /// <param name="remoteClient"></param>
+        /// <param name="validBytes"></param>
+        public void ParsePacket(byte[] validBytes)
+        {
+            using (MemoryStream ms = new MemoryStream(validBytes))
+            using (BinaryReader reader = new BinaryReader(ms))
+            {
+                // 1. 读取第一个字节（包头）
+                // 此时流的位置会向后移动 1 位，正好给后面的 Packet 构造函数接着读
+                byte packetTypeByte = reader.ReadByte();
+                PacketType type = (PacketType)packetTypeByte;
+
+
+                switch (type)
+                {
+                    case PacketType.Position:
+                        UserPositionPacket userPositionPacket = new UserPositionPacket(reader);
+                        UserPositionPacketProcess(userPositionPacket);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        
+        }
+        
+        /// <summary>
+        /// 处理玩家的位置信息更新
+        /// </summary>
+        /// <param name="remotePoint"></param>
+        /// <param name="validBytes"></param>
+        public void UserPositionPacketProcess(UserPositionPacket validBytes)
+        {
+            // 【新增】放入队列等待 Unity 主线程处理
+            _packetQueue.Enqueue(new PacketInfo() { 
+                Ip = validBytes.Ip, 
+                PositionPacket = validBytes
+            });
+        }
         
         
         /// <summary>
@@ -183,6 +250,8 @@ public class NetConect
             }
         }
 
+        
+        
         
         public void Close()
         {

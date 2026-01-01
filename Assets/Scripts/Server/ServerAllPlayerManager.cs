@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Shared.DJRNetLib;
+using Shared.DJRNetLib.Packet;
 using UnityEngine;
 
 public class ServerAllPlayerManager : MonoBehaviour
@@ -50,6 +51,22 @@ public class ServerAllPlayerManager : MonoBehaviour
 
    
    /// <summary>
+   /// 为每个玩家注入移动的指令
+   /// </summary>
+   /// <param name="clientKey"></param>
+   /// <param name="movePacket"></param>
+   public void HandlePlayerMove(string clientKey, UserMovePacket movePacket)
+   {
+      if (AllPlayerInstance.ContainsKey(clientKey))
+      {
+         PlayerInstance player = AllPlayerInstance[clientKey];
+         // 传递输入给玩家实例
+         player.ApplyInput(movePacket.H, movePacket.V);
+      }
+   }
+   
+   
+   /// <summary>
    /// 持续获取所有玩家的位置信息同步到字典里面
    /// </summary>
    public void UpdatePlayerData()
@@ -67,13 +84,5 @@ public class ServerAllPlayerManager : MonoBehaviour
          userPositionPacket.Y = playerInstance.transform.position.y;
          userPositionPacket.Z = playerInstance.transform.position.z;
       }
-   }
-   
-   
-   
-   //为每个玩家实体注入客户端指令
-   public void InjectionInstruction()
-   {
-      
    }
 }
