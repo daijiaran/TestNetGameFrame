@@ -4,7 +4,9 @@ namespace Shared.DJRNetLib
     {
         None = 0,
         Join = 1,
-        Position = 2,
+        PositionAndStatus = 2,
         Move = 3,
+        Attack = 4,
+        ScenesItem = 5,
     }
 }

@@ -9,7 +9,7 @@ public class Server : SingelBase<Server>
 {
     public ServiceUpdate serviceUpdate;
     public ServerAllPlayerManager serverAllPlayerManager;
-
+    public ServerAllitemManager serverAllitemManager;
     private void Awake()
     {
         Init();
@@ -21,7 +21,9 @@ public class Server : SingelBase<Server>
         
         serviceUpdate = new ServiceUpdate();
         transform.AddComponent<ServerAllPlayerManager>();
+        transform.AddComponent<ServerAllitemManager>();
         serverAllPlayerManager = transform.GetComponent<ServerAllPlayerManager>();
+        serverAllitemManager = transform.GetComponent<ServerAllitemManager>();
 
         //订阅玩家加入事件
         if (serviceUpdate != null)
@@ -48,10 +50,16 @@ public class Server : SingelBase<Server>
         {
             // 将逻辑层的数据同步给网络层用于广播
             serviceUpdate.playersData.Players = serverAllPlayerManager.AllPlayerInstancesUserPositionPackets;
+            serviceUpdate.scenesItemData.ScenesItem = serverAllitemManager.AllItemsTransData;
+            
+            //接收数据
             serviceUpdate.Update();
+            
+            //广播数据
             serviceUpdate.SendToAllPlayer();
         }
     }
+    
     
     
     

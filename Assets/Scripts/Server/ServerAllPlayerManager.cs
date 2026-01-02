@@ -9,8 +9,7 @@ public class ServerAllPlayerManager : MonoBehaviour
 {
    //IP地址对应服务器中模拟的玩家当前玩家实例
    public Dictionary<string, PlayerInstance> AllPlayerInstance = new Dictionary<string, PlayerInstance>();
-   public Dictionary<string, UserPositionPacket> AllPlayerInstancesUserPositionPackets = new Dictionary<string, UserPositionPacket>();
-   
+   public Dictionary<string, UserPositionAndStatusPacket> AllPlayerInstancesUserPositionPackets = new Dictionary<string, UserPositionAndStatusPacket>();
    
    private void Update()
    {
@@ -25,11 +24,12 @@ public class ServerAllPlayerManager : MonoBehaviour
       
       PlayerInstance newPlayerInstance = playerInstance.GetComponent<PlayerInstance>();
       newPlayerInstance.PlayerName = userJoinPacket.name;
+      newPlayerInstance.PlayerIp = clientKey;
       AllPlayerInstance.Add(clientKey,newPlayerInstance);
       
       
       
-      UserPositionPacket userPositionPacket = new UserPositionPacket(); 
+      UserPositionAndStatusPacket userPositionPacket = new UserPositionAndStatusPacket(); 
       
       userPositionPacket.Name = newPlayerInstance.PlayerName;
       userPositionPacket.R_X = newPlayerInstance.transform.rotation.eulerAngles.x;
@@ -55,7 +55,22 @@ public class ServerAllPlayerManager : MonoBehaviour
       {
          PlayerInstance player = AllPlayerInstance[clientKey];
          // 传递输入给玩家实例
-         player.ApplyInput(movePacket.H, movePacket.V);
+         player.ApplyMoveInput(movePacket);
+      }
+   }
+
+   /// <summary>
+   /// 为每个玩家注入攻击指令
+   /// </summary>
+   /// <param name="clientKey"></param>
+   /// <param name="remoteClient"></param>
+   /// <param name="userAttack"></param>
+   public void TriggerPlayerAtacck(string clientKey ,EndPoint remoteClient,UserAttackPacket userAttackPacket)
+   {
+      if (AllPlayerInstance.ContainsKey(clientKey))
+      {
+         PlayerInstance player = AllPlayerInstance[clientKey];
+         player.ApplyAttackInput(userAttackPacket);
       }
    }
    
@@ -68,7 +83,7 @@ public class ServerAllPlayerManager : MonoBehaviour
       foreach (var playerInstanceKey in AllPlayerInstance)
       {
          PlayerInstance playerInstance = AllPlayerInstance[playerInstanceKey.Key];
-         UserPositionPacket userPositionPacket = AllPlayerInstancesUserPositionPackets[playerInstanceKey.Key];
+         UserPositionAndStatusPacket userPositionPacket = AllPlayerInstancesUserPositionPackets[playerInstanceKey.Key];
          
          userPositionPacket.Name = playerInstance.PlayerName;
          userPositionPacket.R_X = playerInstance.transform.rotation.eulerAngles.x;
@@ -77,6 +92,10 @@ public class ServerAllPlayerManager : MonoBehaviour
          userPositionPacket.X = playerInstance.transform.position.x;
          userPositionPacket.Y = playerInstance.transform.position.y;
          userPositionPacket.Z = playerInstance.transform.position.z;
+         
+         userPositionPacket.Attack_X = playerInstance.FaceDirection.forward.x;
+         userPositionPacket.Attack_Y = playerInstance.FaceDirection.forward.y;
+         userPositionPacket.Attack_Z = playerInstance.FaceDirection.forward.z;
       }
    }
 }

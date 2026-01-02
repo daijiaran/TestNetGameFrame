@@ -22,8 +22,11 @@ public class NetConect
         public Action<String> errCallback;
         
         
-        //分别接受其他玩家的IP地址，和玩家的包
-        public Action<String,UserPositionPacket> takePlayerPacket;
+        //分别接收并同步其他玩家的IP地址，和玩家的包
+        public Action<String,UserPositionAndStatusPacket> takePlayerPacket;
+        //分别接收并同步场景中所有物体的数据
+        public Action<ScenesItemDataPacket> takeSceneItemPacket;
+
         
         //实现网络信息发送的管子
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -31,14 +34,15 @@ public class NetConect
         // 目标IP地址
         private IPEndPoint ServerAddress = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9050);
 
-        // 【2】创建一个线程安全的队列，作为“篮子”
+        // 专门存放玩家聊天信息的队列
         private ConcurrentQueue<string> _msgQueue = new ConcurrentQueue<string>();
 
-        // 【新增】专门存放玩家数据包的队列
+        // 专门存放玩家数据包的队列
         private ConcurrentQueue<PacketInfo> _packetQueue = new ConcurrentQueue<PacketInfo>();
         
-        
-        
+        // 专门存放场景数据变化包的队列
+        private ConcurrentQueue<ScenesItemDataPacket> _ScenesIteamDataQueue = new ConcurrentQueue<ScenesItemDataPacket>();
+
         
         
         // 构造函数
@@ -49,6 +53,10 @@ public class NetConect
             // 只有绑定了，Socket 才知道要“打开耳朵”听数据
             socket.Bind(new IPEndPoint(IPAddress.Any, 0));
         }
+
+        
+        
+        
         
         // 在 NetConect 类中添加
         public string GetLocalIpDetail()
@@ -129,13 +137,31 @@ public class NetConect
         }
 
 
+        /// <summary>
+        /// 发送攻击指令
+        /// </summary>
+        /// <param name="attackPacket"></param>
+        public void SendAttackPaket(UserAttackPacket attackPacket)
+        {
+            try 
+            {
+                byte[] data = attackPacket.ToBytes();
+                socket.SendTo(data, ServerAddress);
+            }
+            catch (Exception e)
+            {
+                errCallback.Invoke(e.Message);
+            }
+        }
+
+
         
 
         /// <summary>
         /// 发送位置信息
         /// </summary>
         /// <param name="positionPacket"></param>
-        public void SendPositionPacket(UserPositionPacket positionPacket)
+        public void SendPositionPacket(UserPositionAndStatusPacket positionPacket)
         {
             // 【关键】调用 ToBytes() 变成数组，再发送
             byte[] data = positionPacket.ToBytes();
@@ -214,9 +240,13 @@ public class NetConect
 
                 switch (type)
                 {
-                    case PacketType.Position:
-                        UserPositionPacket userPositionPacket = new UserPositionPacket(reader);
-                        UserPositionPacketProcess(userPositionPacket);
+                    case PacketType.PositionAndStatus:
+                        UserPositionAndStatusPacket UserPositionAndStatusPacket = new UserPositionAndStatusPacket(reader);
+                        UserPositionAndStatusPacketProcess(UserPositionAndStatusPacket);
+                        break;
+                    case PacketType.ScenesItem:
+                        ScenesItemDataPacket scenesItemDataPacket = new ScenesItemDataPacket(reader);
+                        ScenesItemDataPacketProcess(scenesItemDataPacket);
                         break;
                     default:
                         break;
@@ -230,17 +260,22 @@ public class NetConect
         
         
         /// <summary>
-        /// 处理场景中对象的位置信息更新
+        /// 处理场景中玩家对象的位置信息更新
         /// </summary>
         /// <param name="remotePoint"></param>
         /// <param name="validBytes"></param>
-        public void UserPositionPacketProcess(UserPositionPacket validBytes)
+        public void UserPositionAndStatusPacketProcess(UserPositionAndStatusPacket validBytes)
         {
             // 【新增】放入队列等待 Unity 主线程处理
             _packetQueue.Enqueue(new PacketInfo() { 
                 Ip = validBytes.Ip, 
-                PositionPacket = validBytes
+                PositionAndStatusPacket = validBytes
             });
+        }
+
+        public void ScenesItemDataPacketProcess(ScenesItemDataPacket validBytes)
+        {
+            _ScenesIteamDataQueue.Enqueue(validBytes);
         }
         
         
@@ -249,6 +284,7 @@ public class NetConect
         /// </summary>
         public void Update()
         {
+            //处理聊天队列
             while (_msgQueue.TryDequeue(out string msg))
             {
                 takeMessage?.Invoke(msg);
@@ -257,8 +293,13 @@ public class NetConect
             //处理玩家数据包队列
             while (_packetQueue.TryDequeue(out PacketInfo info))
             {
-                // 触发事件，将 IP 和 包数据传给 NetworkManager
-                takePlayerPacket?.Invoke(info.Ip, info.PositionPacket);
+                // 触发事件，将 IP 和 包数据传给 NetworkPlayerManager
+                takePlayerPacket?.Invoke(info.Ip, info.PositionAndStatusPacket);
+            }
+
+            while (_ScenesIteamDataQueue.TryDequeue(out ScenesItemDataPacket IteamPositionData))
+            {
+                takeSceneItemPacket.Invoke(IteamPositionData);
             }
         }
 

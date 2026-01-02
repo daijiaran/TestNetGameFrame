@@ -15,8 +15,13 @@ public class ServiceUpdate
     public Action<string, EndPoint, UserJoinPacket> NewPlayerJoinEvent;
     
     
-    
+    //管理玩家数据
     public PlayersData playersData =  new PlayersData();
+    //管理场景数据
+    public ScenesItemData scenesItemData = new ScenesItemData();
+    
+    
+    //建立连接变量
     private Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
     private IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 9050);
     private byte[] buffer = new byte[1024];
@@ -25,7 +30,6 @@ public class ServiceUpdate
     {
         socket.Bind(localEndPoint);
         Console.WriteLine("服务端已启动...");
-
     }
     
     /// <summary>
@@ -50,10 +54,18 @@ public class ServiceUpdate
                     
                     //获取有效比特流
                     byte[] validBytes = new byte[receivedLength];
+                    
                     Array.Copy(buffer, validBytes, receivedLength);
+                    
+                    
+                    
                     
                     //解析包
                     ParsePacket(clientKey, remoteClient ,validBytes);
+                    
+                    
+                    
+                    
                 }
                 catch (SocketException sockEx)
                 {
@@ -86,12 +98,13 @@ public class ServiceUpdate
         using (MemoryStream ms = new MemoryStream(validBytes))
         using (BinaryReader reader = new BinaryReader(ms))
         {
-            // 1. 读取第一个字节（包头）
+            // 读取第一个字节（包头）
             // 此时流的位置会向后移动 1 位，正好给后面的 Packet 构造函数接着读
             byte packetTypeByte = reader.ReadByte();
             PacketType type = (PacketType)packetTypeByte;
 
 
+            //根据包类型分别进行处理
             switch (type)
             {
                 case PacketType.Join:
@@ -101,6 +114,10 @@ public class ServiceUpdate
                 case PacketType.Move:
                     UserMovePacket movePacket = new UserMovePacket(reader);
                     OnUserMove(clientKey, movePacket);
+                    break;
+                case PacketType.Attack:
+                    UserAttackPacket attackPacket = new UserAttackPacket(reader);
+                    UserAttackData(clientKey, remoteClient,attackPacket);
                     break;
                 default:
                     break;
@@ -135,6 +152,19 @@ public class ServiceUpdate
         // 如果没人订阅这个事件，代码也不会报错崩溃
         NewPlayerJoinEvent?.Invoke(clientKey, remoteClient, validBytes);
     }
+
+
+    /// <summary>
+    /// 玩家点击攻击的时候服务器的处理方法
+    /// </summary>
+    /// <param name="clientKey"></param>
+    /// <param name="remoteClient"></param>
+    /// <param name="userAttack"></param>
+    public void UserAttackData(string clientKey ,EndPoint remoteClient,UserAttackPacket userAttack)
+    {
+        //驱动服务中的玩家实例攻击
+        Server.Instance.serverAllPlayerManager.TriggerPlayerAtacck(clientKey, remoteClient, userAttack);
+    }
     
     
     
@@ -151,12 +181,12 @@ public class ServiceUpdate
     
     
     /// <summary>
-    /// 处理玩家的位置信息更新，但是目前是服务器模式并不接收玩家位置信息只
+    /// 处理玩家的位置信息更新，但是目前是服务器模式并不接收玩家位置信息,所以此方法暂时禁止使用
     /// </summary>
     /// <param name="clientKey"></param>
     /// <param name="remoteClient"></param>
     /// <param name="validBytes"></param>
-    public void UserPositionPacketProcess(string clientKey ,EndPoint remoteClient,  UserPositionPacket validBytes)
+    public void UserPositionPacketProcess(string clientKey ,EndPoint remoteClient,  UserPositionAndStatusPacket validBytes)
     {
         
         UpdatePlayerData(clientKey,remoteClient,validBytes);
@@ -174,7 +204,7 @@ public class ServiceUpdate
     /// <param name="clientKey"></param>
     /// <param name="remoteClient"></param>
     /// <param name="newPositionPacket"></param>
-    public void UpdatePlayerData(string clientKey , EndPoint remoteClient , UserPositionPacket newPositionPacket )
+    public void UpdatePlayerData(string clientKey , EndPoint remoteClient , UserPositionAndStatusPacket newPositionPacket )
     {
         // 更新玩家数据
         if (playersData.Players.ContainsKey(clientKey))
@@ -206,20 +236,64 @@ public class ServiceUpdate
     /// </summary>
     public void SendToAllPlayer()
     {
-        // 1. 遍历每一个需要接收数据的客户端 (接收者)
+        // 遍历每一个需要接收数据的客户端 (接收者)
         foreach (var clientKvp in playersData.ClientEndPoints)
         {
             EndPoint receiverEndPoint = clientKvp.Value;
 
-            // 2. 遍历所有玩家的数据 (要发送的内容)
+            //遍历所有玩家的数据 (要发送的内容)
             foreach (var playerKvp in playersData.Players)
             {
-                UserPositionPacket dataToSend = playerKvp.Value;
-                
-                // 发送！
-                // 这样接收者(Receiver) 就会收到 玩家A、玩家B、玩家C... 的一个个包
+                //发送玩家数据
+                UserPositionAndStatusPacket dataToSend = playerKvp.Value;
                 socket.SendTo(dataToSend.ToBytes(), receiverEndPoint);
+            }
+
+            foreach (var ItemKey in scenesItemData.ScenesItem)
+            {
+                ScenesItemDataPacket IscenesItem = ItemKey.Value;
+                socket.SendTo(IscenesItem.Tobytes(),receiverEndPoint);
             }
         }
     }
+
+
+
+    public void SendToAllPlayerDestoryOBJ(PacketType packetType,PacketBase packet)
+    {
+        //根据包类型分别进行处理
+        switch (packetType)
+        {
+            case PacketType.PositionAndStatus:
+                UserPositionAndStatusPacket userPositionAndStatus = (UserPositionAndStatusPacket)packet;
+                    foreach (var clientKvp in playersData.ClientEndPoints)
+                    {
+                        EndPoint receiverEndPoint = clientKvp.Value;
+                        socket.SendTo(userPositionAndStatus.ToBytes(), receiverEndPoint);
+                    }
+                break;
+            case PacketType.ScenesItem:
+                ScenesItemDataPacket scenesItemData = (ScenesItemDataPacket)packet;
+                    foreach (var clientKvp in playersData.ClientEndPoints)
+                    {
+                        EndPoint receiverEndPoint = clientKvp.Value;
+                        socket.SendTo(scenesItemData.Tobytes(),receiverEndPoint);
+                    }
+                break;
+            default:
+                break;
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
