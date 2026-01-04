@@ -54,6 +54,7 @@
     <Compile Include="Assets\Scripts\Client\NetTalk.cs" />
     <Compile Include="Assets\Scripts\Shared\DJRNetLib\Packet\ScenesItemDataPacket.cs" />
     <Compile Include="Assets\Scripts\Server\iteam\ScenesItemData.cs" />
+    <Compile Include="Assets\Scripts\Client\UI\GameoverPanel.cs" />
     <Compile Include="Assets\Scripts\Shared\DJRNetLib\Packet\PacketBase.cs" />
     <Compile Include="Assets\Scripts\GameRoot\ServerRoot.cs" />
     <Compile Include="Assets\Scripts\Server\Player\PlayersData.cs" />
@@ -74,6 +75,7 @@
     <Compile Include="Assets\Scripts\Server\ServerAllitemManager.cs" />
     <Compile Include="Assets\Scripts\Shared\DJRNetLib\Packet\UserAttackPacket.cs" />
     <Compile Include="Assets\Scripts\Shared\DJRNetLib\PacketType.cs" />
+    <Compile Include="Assets\Scripts\Shared\DJRNetLib\Common\PlayerGameData.cs" />
     <Compile Include="Assets\Scripts\Server\Player\PlayerLifeControl.cs" />
     <Compile Include="Assets\Scripts\Shared\DJRNetLib\Packet\UserMovePacket.cs" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

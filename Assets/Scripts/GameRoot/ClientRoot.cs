@@ -8,10 +8,10 @@ public class ClientRoot : SingelBase<ClientRoot>
     public StartGamePanel StartGamePanel;
     [FormerlySerializedAs("NetworkPlayerManager")] public NetworkPlayerManager networkPlayerManager;
     [FormerlySerializedAs("NetworkScensItemManager")] public NetworkScensItemManager networkScensItemManager;
-    
-    
-    
     [Header("网络层服务")] public NetConect  netConect;
+
+    public Action GameOverEvent;
+    
 
     private void Awake()
     {
@@ -31,7 +31,6 @@ public class ClientRoot : SingelBase<ClientRoot>
         netConect = new NetConect();
         //开启消息接受线程
         netConect.ReceiveInformation();
-
     }
 
     public void joinGame(String PlayerName)
@@ -41,9 +40,9 @@ public class ClientRoot : SingelBase<ClientRoot>
 
         networkPlayerManager = networkPlayerManager_OBJ.GetComponent<NetworkPlayerManager>();
         networkScensItemManager =  networkScensItemManager_OBJ.GetComponent<NetworkScensItemManager>();
-        
-        
-        
+
+
+        GameOverEvent += GameOver;
         //游戏开始由玩家同步组件开启
         networkPlayerManager.GameStart(PlayerName);
     }
@@ -59,6 +58,26 @@ public class ClientRoot : SingelBase<ClientRoot>
             }
         }
         return null;
+    }
+
+
+    public void GameOver()
+    {
+        GameObject GamoverPanel = Instantiate(Resources.Load<GameObject>("Prefabs/GameOverPanel"));
+        GamoverPanel.transform.SetParent(GetParent());
+    
+        RectTransform rectTransform = GamoverPanel.GetComponent<RectTransform>();
+
+        // 1. 设置本地位移、旋转和缩放为初始值
+        rectTransform.localPosition = Vector3.zero;
+        rectTransform.localRotation = Quaternion.identity;
+        rectTransform.localScale = Vector3.one;
+
+        // 2. 将所有边距（Left, Right, Top, Bottom）归零
+        // offsetMin 对应 Left (x) 和 Bottom (y)
+        // offsetMax 对应 Right (-x) 和 Top (-y)
+        rectTransform.offsetMin = Vector2.zero;
+        rectTransform.offsetMax = Vector2.zero;
     }
 
 

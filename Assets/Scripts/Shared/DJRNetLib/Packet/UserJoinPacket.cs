@@ -30,6 +30,7 @@ namespace Shared.DJRNetLib
         public UserJoinPacket(BinaryReader reader)
         {
             name=reader.ReadString();
+            Ip = reader.ReadString();
         }
 
         public UserJoinPacket(string name)

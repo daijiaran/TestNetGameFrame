@@ -33,8 +33,6 @@ public class BulltControl : ScenesItemBase
             rb.isKinematic = true;
             col.enabled = false;
         }
-        
-        Debug.Log("Aaaaaaaaa");
     }
 
 
@@ -51,17 +49,33 @@ public class BulltControl : ScenesItemBase
             Server.Instance.serviceUpdate.SendToAllPlayerDestoryOBJ(PacketType.ScenesItem,scenesItemPacket);
         }
     }
-    
-    private void OnTriggerEnter(Collider other)
+     
+    private void FixedUpdate()
     {
-        if (IsServer)
+        if (!IsServer) return;
+    
+        float moveDistance = BulltVelocity * Time.fixedDeltaTime;
+        Vector3 direction = transform.forward;
+    
+        float bulletRadius = 0.3f; // 子弹的粗细
+        if (Physics.SphereCast(transform.position, bulletRadius, direction, out RaycastHit hit, moveDistance))
         {
-            PlayerInstance player = other.GetComponent<PlayerInstance>();
+            // 确保击中的是玩家层或具有 PlayerInstance 脚本
+            PlayerInstance player = hit.collider.GetComponent<PlayerInstance>();
             if (player != null)
             {
-                player.PlayerLifeControl.TakeDamage(damageValue);    
-                Debug.Log("执行伤害玩家方法！！");
+                // 将子弹移至撞击点（可选，视觉更真实）
+                transform.position = hit.point;
+            
+                player.PlayerLifeControl.TakeDamage(damageValue);
+                Destroy(gameObject);
+                Debug.Log("射线检测命中玩家！");
             }
+        }
+        else
+        {
+            // 如果没撞到，正常移动
+            transform.position += direction * moveDistance;
         }
     }
 }

@@ -148,9 +148,17 @@ public class ServiceUpdate
             playersData.ClientEndPoints[clientKey] = remoteClient;
         }
 
-        // 【修复 2】使用 ?. Invoke 防止空引用异常
+        // 使用 ?. Invoke 防止空引用异常
         // 如果没人订阅这个事件，代码也不会报错崩溃
         NewPlayerJoinEvent?.Invoke(clientKey, remoteClient, validBytes);
+        validBytes.Ip = clientKey;
+        //向所有玩家发送新玩家加入信号
+        if (validBytes.Ip == "")
+        {
+            Debug.LogError("服务端：服务端向客户端广播客户的IP为空，广播失败！");
+            return;
+        }
+        SendToAllPlayerDestoryOBJ(PacketType.Join,validBytes);
     }
 
 
@@ -279,6 +287,30 @@ public class ServiceUpdate
                         EndPoint receiverEndPoint = clientKvp.Value;
                         socket.SendTo(scenesItemData.Tobytes(),receiverEndPoint);
                     }
+                break;
+            case PacketType.Join:
+                UserJoinPacket userJoinPacket = (UserJoinPacket)packet;
+
+                // 只有当 IP 真的为空时才报错
+                if (string.IsNullOrEmpty(userJoinPacket.Ip))
+                {
+                    Debug.LogError("服务端：广播失败，UserJoinPacket.Ip 为空！");
+                    return; 
+                }
+
+                foreach (var clientKvp in playersData.ClientEndPoints)
+                {
+                    EndPoint receiverEndPoint = clientKvp.Value;
+                    try
+                    {
+                        // 确保 Tobyte() 方法能正确序列化 Ip 字段
+                        socket.SendTo(userJoinPacket.Tobyte(), receiverEndPoint);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"广播新玩家失败: {e.Message}");
+                    }
+                }
                 break;
             default:
                 break;

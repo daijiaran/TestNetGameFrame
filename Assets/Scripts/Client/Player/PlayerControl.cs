@@ -17,7 +17,6 @@ public class PlayerControl : MonoBehaviour
     [Header("Camera")]
     public Camera camera;
     public float mouseSpeed = 3f;
-    public float moveCameraSpeed = 15f;
     public float zoomSpeed = 5f;
     public float minDistance = 2f;
     public float maxDistance = 15f;
@@ -38,9 +37,21 @@ public class PlayerControl : MonoBehaviour
         if (isCurrentPlayer)
         {
             camera = Camera.main;
+            // 1. 将相机设为玩家子物体
             camera.transform.SetParent(transform);
-            camera.transform.localPosition = new Vector3(0, 2, -distance);
-            camera.transform.localRotation = Quaternion.identity;
+        
+            // 2. 设置相机在玩家头顶的高度（例如往上偏移 15 米）
+            // x=0, z=0 保证相机在正上方，y 是高度
+            camera.transform.localPosition = new Vector3(0, 15f, 0);
+        
+            // 3. 设置旋转：绕 X 轴旋转 90 度，使其垂直向下看
+            camera.transform.localRotation = Quaternion.Euler(90f, 0, 0);
+        
+            // 如果你希望在初始化后仍然允许 HandleCameraRotation 控制，
+            // 记得在这里同步初始的变量值
+            currentX = transform.eulerAngles.y;
+            currentY = 60f; // 初始俯视角度
+            distance = maxDistance; // 对应 y 的高度
         }
     }
 
@@ -91,7 +102,7 @@ public class PlayerControl : MonoBehaviour
 
 
     /// <summary>
-    /// 攻击
+    /// 攻击信号发送
     /// </summary>
     public void Attack()
     {
@@ -108,6 +119,12 @@ public class PlayerControl : MonoBehaviour
 
     public void Died()
     {
+        if (isCurrentPlayer)
+        {
+            ClientRoot.Instance.GameOverEvent.Invoke();
+            camera.transform.SetParent(null);
+        }
+
         Destroy(gameObject);
     }
     

@@ -92,7 +92,6 @@ public class PlayerInstance: MonoBehaviour
             
             }
 
-            //忽略子弹与发射者(玩家)之间的碰撞
             //假设当前脚本挂在玩家身上，且玩家有 Collider
             Collider playerCollider = GetComponent<Collider>();
             Collider bulletCollider = bulletObj.GetComponent<Collider>();

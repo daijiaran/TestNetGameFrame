@@ -20,6 +20,7 @@ public class NetConect
         public Action<String> takeMessage;
         //发送失败的时候
         public Action<String> errCallback;
+        public Action<UserJoinPacket> netUserJoinEvent;
         
         
         //分别接收并同步其他玩家的IP地址，和玩家的包
@@ -215,7 +216,7 @@ public class NetConect
                     {
                         // 【重要修复】绝对不要在这里 break！
                         // 打印错误日志，然后允许循环继续，接收下一个包
-                        UnityEngine.Debug.LogError($"接收线程发生错误，已忽略: {e.Message}\n{e.StackTrace}");
+                        UnityEngine.Debug.LogWarning($"接收线程发生错误，已忽略: {e.Message}\n{e.StackTrace}");
                     }
                 }
             });
@@ -248,6 +249,11 @@ public class NetConect
                         ScenesItemDataPacket scenesItemDataPacket = new ScenesItemDataPacket(reader);
                         ScenesItemDataPacketProcess(scenesItemDataPacket);
                         break;
+                    case PacketType.Join:
+                        //处理玩家加入
+                        UserJoinPacket userJoinPacket = new UserJoinPacket(reader);
+                        NetUserJoin(userJoinPacket);
+                        break;
                     default:
                         break;
                 }
@@ -256,7 +262,11 @@ public class NetConect
         }
         
         
-        
+        public void NetUserJoin(UserJoinPacket joinPacket)
+        {
+            Debug.Log("客户端：接收到服务器广播下来的其他玩家加入！！");
+            netUserJoinEvent?.Invoke(joinPacket);
+        }
         
         
         /// <summary>
