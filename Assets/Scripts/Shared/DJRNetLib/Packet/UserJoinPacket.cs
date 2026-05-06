@@ -7,37 +7,41 @@ namespace Shared.DJRNetLib
     {
         public string name;
 
-        public byte[] Tobyte()
-        {
-            using (MemoryStream ms = new MemoryStream())
-            using (BinaryWriter writer = new BinaryWriter(ms))
-            {
-                //写入消息头
-                writer.Write((byte)PacketType.Join);
-                
-                //写入消息体
-                writer.Write(name);
-                writer.Write(Ip);
-                
-                return ms.ToArray(); // 返回生成的字节数组
-            }
-        }
-        
         /// <summary>
-        /// 构造函数，构造玩家加入包
+        /// 从二进制读取器中反序列化玩家加入数据包。
         /// </summary>
-        /// <param name="reader"></param>
         public UserJoinPacket(BinaryReader reader)
         {
-            name=reader.ReadString();
+            name = reader.ReadString();
             Ip = reader.ReadString();
         }
 
+        /// <summary>
+        /// 根据玩家名称构造加入游戏数据包。
+        /// </summary>
         public UserJoinPacket(string name)
         {
             this.name = name;
         }
-        
-        public UserJoinPacket() {}
+
+        /// <summary>
+        /// 创建一个空的玩家加入数据包实例。
+        /// </summary>
+        public UserJoinPacket() { }
+
+        /// <summary>
+        /// 将玩家加入数据包序列化为字节数组。
+        /// </summary>
+        public override byte[] ToBytes()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(ms))
+            {
+                writer.Write((byte)PacketType.Join);
+                writer.Write(name);
+                writer.Write(Ip);
+                return ms.ToArray();
+            }
+        }
     }
 }

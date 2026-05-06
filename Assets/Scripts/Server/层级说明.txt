@@ -1,0 +1,9 @@
+Server 根目录层级说明
+
+上级层级：Unity 游戏对象层
+下级层级：Interfaces、Managers、Services、GameRules、Data、Common、Player、ScenesOBJ
+
+作用：
+- 作为服务端入口，负责初始化和协调整个服务端运行体系。
+- 当前包含 Server.cs 和整体层次说明文件。
+- 根目录层级把所有子层组合成完整的服务端模块。

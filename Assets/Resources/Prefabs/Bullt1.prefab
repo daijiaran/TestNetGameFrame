@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3719853379174199008}
   - component: {fileID: 4445391131934144329}
   - component: {fileID: 411160431218654234}
+  - component: {fileID: 1089456437509518383}
   m_Layer: 0
   m_Name: Bullt1
   m_TagString: Untagged
@@ -149,14 +150,32 @@ MonoBehaviour:
   m_GameObject: {fileID: 6094563696144682582}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd718691681b87a4db56a8422c1f57ed, type: 3}
+  m_Script: {fileID: 11500000, guid: 9d0f4826af754fb5a78448ad2de62f86, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BulltControl
+  m_EditorClassIdentifier: Assembly-CSharp::MyNetGame.ServerScenesOBJ.ServerBulltControl
   PrefabsName: Bullt1
   CurrentInstanceID: 0
-  IsServer: 0
   IsDestroy: 0
   rb: {fileID: 0}
   col: {fileID: 0}
   damageValue: 20
-  BulltVelocity: 50
+  BulltVelocity: 30
+--- !u!114 &1089456437509518383
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6094563696144682582}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d845df905d5d42529c4a9b7eef0e0be0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyNetGame.ClientScenesOBJ.ClientBulltControl
+  PrefabsName: Bullt1
+  CurrentInstanceID: 0
+  IsDestroy: 0
+  rb: {fileID: 0}
+  col: {fileID: 0}
+  damageValue: 20
+  BulltVelocity: 30

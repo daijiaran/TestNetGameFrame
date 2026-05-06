@@ -1,31 +1,51 @@
-
 using System;
+using MyNetGame.ServerScenesOBJ;
 using Shared.DJRNetLib;
 using Shared.DJRNetLib.Packet;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
-public class PlayerInstance: MonoBehaviour
+public class PlayerInstance : MonoBehaviour
 {
+    private IPlayerManager playerManager;
+    private ISceneObjectManager sceneObjectManager;
+    private INetworkService networkService;
+    
     public string PlayerName;
     public string PlayerIp;
     public Rigidbody rigidbody;
     public Collider collider;
-    public float moveSpeed = 5f; // 服务器端的移动速度
+    public float moveSpeed = 5f;
     [Header("枪口的面向方向")]
     public Transform FaceDirection;
     public Transform BullettPos;
-    public PlayerLifeControl PlayerLifeControl =  new PlayerLifeControl();
+    public PlayerHpControl PlayerHpControl;
 
+    /// <summary>
+    /// 初始化玩家实例依赖的管理器与网络服务。
+    /// </summary>
+    public void Initialize(IPlayerManager manager, ISceneObjectManager sceneManager, INetworkService network)
+    {
+        this.playerManager = manager;
+        this.sceneObjectManager = sceneManager;
+        this.networkService = network;
+    }
     
+    /// <summary>
+    /// 在对象启动时缓存组件并初始化生命值控制器。
+    /// </summary>
     private void Start()
     {
         rigidbody = gameObject.GetComponent<Rigidbody>();
         collider = gameObject.GetComponent<Collider>();
-        PlayerLifeControl.IsDead += Die;
+        PlayerHpControl = transform.AddComponent<PlayerHpControl>();
+        PlayerHpControl.IsDead += Die;
     }
 
-    
+    /// <summary>
+    /// 应用客户端发送的移动输入并更新玩家朝向。
+    /// </summary>
     public void ApplyMoveInput(UserMovePacket movePacket)
     {
         Vector3 forward = new Vector3(movePacket.D_x, 0, movePacket.D_z);
@@ -35,7 +55,6 @@ public class PlayerInstance: MonoBehaviour
         forward.Normalize();
         
         Vector3 right = Vector3.Cross(Vector3.up, forward);
-        // 合成移动方向
         Vector3 moveDir = forward * movePacket.V + right * movePacket.H;
 
         if (moveDir.sqrMagnitude > 1f)
@@ -55,44 +74,43 @@ public class PlayerInstance: MonoBehaviour
             }
         }
         
-        
         FaceDirection.forward = new Vector3(movePacket.Attack_x, 0, movePacket.Attack_z);
-        
     }
 
-
+    /// <summary>
+    /// 应用客户端发送的攻击输入并生成对应子弹对象。
+    /// </summary>
     public void ApplyAttackInput(UserAttackPacket attackPacket)
     {
         if (attackPacket.BulltType == 1)
         {
-            // 1. 加载资源 (建议：不要在Update/攻击时实时Load，最好在Start中预加载缓存，否则会卡顿)
-            GameObject prefab = Resources.Load<GameObject>("Prefabs/"+attackPacket.Prefabsname);
+            GameObject prefab = Resources.Load<GameObject>("Prefabs/" + attackPacket.Prefabsname);
             if (prefab == null) 
             {
-                Debug.LogError("找不到子弹预制体！请检查路径：Prefabs/"+attackPacket.Prefabsname);
+                Debug.LogError("找不到子弹预制体！请检查路径：Prefabs/" + attackPacket.Prefabsname);
                 return;
             }
-            
+             
             GameObject bulletObj = Instantiate(prefab, BullettPos.position, FaceDirection.rotation);
             
-            BulltControl bulletScript = bulletObj.GetComponent<BulltControl>();
-            bulletScript.IsServer = true;
+            ServerBulltControl bulletScript = bulletObj.GetComponent<ServerBulltControl>();
+            bulletScript.PrefabsName = attackPacket.Prefabsname;
+            
+            if (sceneObjectManager != null && networkService != null)
+            {
+                bulletScript.Initialize(sceneObjectManager, networkService);
+            }
+            
             bulletScript.InitOBJ();
             
-            bulletScript.PrefabsName = attackPacket.Prefabsname;
             Rigidbody bulletRb = bulletObj.GetComponent<Rigidbody>();
 
             if (bulletRb != null && bulletScript != null)
             {
-                // 确保速度不为0，如果脚本里没填，给个默认值 20
                 float speed = bulletScript.BulltVelocity > 0 ? bulletScript.BulltVelocity : 20f;
-            
-                // Unity 6 写法
                 bulletRb.linearVelocity = FaceDirection.forward * speed; 
-            
             }
 
-            //假设当前脚本挂在玩家身上，且玩家有 Collider
             Collider playerCollider = GetComponent<Collider>();
             Collider bulletCollider = bulletObj.GetComponent<Collider>();
         
@@ -103,25 +121,26 @@ public class PlayerInstance: MonoBehaviour
         }
     }
 
-
+    /// <summary>
+    /// 处理玩家死亡并销毁当前玩家对象。
+    /// </summary>
     public void Die()
     {
         Destroy(this.gameObject);
     }
     
-    
-    
-    
-
+    /// <summary>
+    /// 在玩家对象禁用时清理数据并向其他客户端广播死亡状态。
+    /// </summary>
     private void OnDisable()
     {
-        UserPositionAndStatusPacket userStatusPacket =  Server.Instance.serverAllPlayerManager.AllPlayerInstancesUserPositionPackets[PlayerIp];
-        Server.Instance.serverAllPlayerManager.AllPlayerInstance.Remove(PlayerIp);
-        Server.Instance.serverAllPlayerManager.AllPlayerInstancesUserPositionPackets.Remove(PlayerIp);
-        userStatusPacket.isDead = true;
-        //发送最后一条销毁自己的信息
-        Server.Instance.serviceUpdate.SendToAllPlayerDestoryOBJ(PacketType.PositionAndStatus,userStatusPacket);
+        if (playerManager == null || networkService == null) return;
+        
+        if (playerManager.AllPlayerInstancesUserPositionPackets.TryGetValue(PlayerIp, out var userStatusPacket))
+        {
+            playerManager.RemovePlayer(PlayerIp);
+            userStatusPacket.isDead = true;
+            networkService.SendToAllPlayerDestoryOBJ(PacketType.PositionAndStatus, userStatusPacket);
+        }
     }
-    
-    
 }

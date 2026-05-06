@@ -1,0 +1,30 @@
+{
+  "files.exclude": {
+    "Library": true,
+    "Temp": true,
+    "obj": true,
+    "Logs": true,
+    "UserSettings": true,
+    "Build": true,
+    "Builds": true,
+    "**/*.csproj": true,
+    "**/*.sln": true,
+    "**/*.user": true,
+    "**/*.meta": true
+  },
+  "search.exclude": {
+    "Library": true,
+    "Temp": true,
+    "obj": true,
+    "Logs": true,
+    "UserSettings": true,
+    "Build": true,
+    "Builds": true
+  },
+  "files.watcherExclude": {
+    "**/Library/**": true,
+    "**/Temp/**": true,
+    "**/obj/**": true,
+    "**/Logs/**": true
+  }
+}

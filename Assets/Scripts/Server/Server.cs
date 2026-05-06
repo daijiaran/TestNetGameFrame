@@ -1,76 +1,65 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
-using Shared.DJRNetLib.Packet; // 引用包定义
-using System.Net;
-using Shared.DJRNetLib;
 
 public class Server : SingelBase<Server>
 {
+    private IPlayerManager playerManager;
+    private ISceneObjectManager sceneObjectManager;
+    private INetworkService networkService;
+    private IClientRegistry clientRegistry;
+    private IServerCommandHandler commandHandler;
+    private IWorldStateProvider worldStateProvider;
+    private ServerStateSyncService stateSyncService;
+
     public ServiceUpdate serviceUpdate;
     public ServerAllPlayerManager serverAllPlayerManager;
     public ServerAllitemManager serverAllitemManager;
+    public MonsterSpawn monsterSpawn;
+
+    /// <summary>
+    /// 在对象唤醒时初始化服务器单例基础状态。
+    /// </summary>
     private void Awake()
     {
         Init();
     }
 
-    void Start()
+    /// <summary>
+    /// 启动服务器核心服务并初始化各个管理模块。
+    /// </summary>
+    private void Start()
     {
-        Debug.Log("服务器开始运行！！！");        
-        
+        Debug.Log("服务器开始运行！！！");
+
         serviceUpdate = new ServiceUpdate();
-        transform.AddComponent<ServerAllPlayerManager>();
-        transform.AddComponent<ServerAllitemManager>();
-        serverAllPlayerManager = transform.GetComponent<ServerAllPlayerManager>();
-        serverAllitemManager = transform.GetComponent<ServerAllitemManager>();
+        serverAllPlayerManager = gameObject.AddComponent<ServerAllPlayerManager>();
+        serverAllitemManager = gameObject.AddComponent<ServerAllitemManager>();
+        monsterSpawn = gameObject.AddComponent<MonsterSpawn>();
 
-        //订阅玩家加入事件
-        if (serviceUpdate != null)
-        {
-            serviceUpdate.NewPlayerJoinEvent += OnPlayerJoin;
-        }
+        playerManager = serverAllPlayerManager;
+        sceneObjectManager = serverAllitemManager;
+        networkService = serviceUpdate;
+
+        clientRegistry = new ClientRegistry();
+        commandHandler = new ServerCommandHandler(clientRegistry, playerManager, sceneObjectManager, networkService);
+        worldStateProvider = new ServerWorldStateProvider(playerManager, sceneObjectManager);
+        stateSyncService = new ServerStateSyncService(networkService, clientRegistry, worldStateProvider);
+
+        serviceUpdate.Initialize(commandHandler, clientRegistry);
+        monsterSpawn.Initialize(playerManager, sceneObjectManager, networkService);
+        monsterSpawn.GameSpawnInit();
     }
 
-    
-    
-    private void OnPlayerJoin(string clientKey, EndPoint remoteEndPoint, UserJoinPacket joinPacket)
+    /// <summary>
+    /// 供 Unity 的 Update 调用，持续处理网络消息并同步世界状态。
+    /// </summary>
+    private void Update()
     {
-        Debug.Log($"接收到玩家加入请求: {clientKey}");
-        serverAllPlayerManager.CreatePlayerInstance(clientKey,joinPacket); 
-    }
+        if (serviceUpdate == null || stateSyncService == null)
+        {
+            return;
+        }
 
-    
-    
-    
-    
-    void Update()
-    {
-        if (serverAllPlayerManager != null && serviceUpdate != null)
-        {
-            // 将逻辑层的数据同步给网络层用于广播
-            serviceUpdate.playersData.Players = serverAllPlayerManager.AllPlayerInstancesUserPositionPackets;
-            serviceUpdate.scenesItemData.ScenesItem = serverAllitemManager.AllItemsTransData;
-            
-            //接收数据
-            serviceUpdate.Update();
-            
-            //广播数据
-            serviceUpdate.SendToAllPlayer();
-        }
-    }
-    
-    
-    
-    
-    
-    
-    // 在销毁时取消订阅防止内存泄漏
-    private void OnDestroy()
-    {
-        if (serviceUpdate != null)
-        {
-            serviceUpdate.NewPlayerJoinEvent -= OnPlayerJoin;
-        }
+        serviceUpdate.Update();
+        stateSyncService.BroadcastSnapshot();
     }
 }
